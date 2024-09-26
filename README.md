@@ -8,5 +8,6 @@ The commits it expects are:
 - new commit: The one that is supposed to be verified
 - current commit: can be given to avoid re-checking and downgrade attacks
 - introduction commit: This is the root of trust, every commit that is to be included must be a decendant of this
+
 The authentication is based on GPG-key-fingerprints, every directory may specify a .auth file that lists the fingerprints of the primary keys, that are allowed to change the contents of the directory. Permission to change a directory includes all subdirectories and files, to rename a directory the user must have the rights to alter its parent directory.
 Merge commits will be reduced to their diff (we always follow the first parent path), this allows mergeing unsigned changes.
