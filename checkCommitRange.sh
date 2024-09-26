@@ -25,8 +25,10 @@ if ! git --git-dir="$git_dir" merge-base --is-ancestor "$intro_commit" "$current
     echo "bad state. The current commit is not a descendant of the introduction at $intro_commit"  1>&2
     exit 1
 fi
+declare iteration_commit="$current_commit"
 while read -r commit; do
   echo "Processing revision $commit"
+  iteration_commit="$commit"
   fingerprint_raw=$(git --git-dir="$git_dir" -c gpg.program="$(which gpg)" verify-commit --raw "$commit" 2>&1) ||
   (gpg --import keys/*/*.asc &> /dev/null &&
     fingerprint_raw=$(git --git-dir="$git_dir" -c gpg.program="$(which gpg)" verify-commit --raw "$commit" 2>&1)) ||
@@ -45,4 +47,8 @@ while read -r commit; do
   done < <(echo "$auth_changes")
   echo "Testing for footguns"
   verify_change_authorization touched_dirs permission_map "$fingerprint" || exit 1
-done < <(git --git-dir="$git_dir" rev-list --first-parent "$new_commit" --not "$current_commit" --reverse)
+done < <(git --git-dir="$git_dir" rev-list --first-parent "$new_commit" --not "$current_commit" --reverse --ancestry-path)
+if [ $(git --git-dir="$git_dir" rev-parse "$iteration_commit") != $(git --git-dir="$git_dir" rev-parse "$new_commit") ]; then
+  echo "Failed to reach the desired commit. This is likely due to current commit being on a path that has been declared as a feature branch, in a later merge." 1>&2
+  exit 1
+fi
